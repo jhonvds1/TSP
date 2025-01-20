@@ -37,9 +37,10 @@ while True:
         os.system('cls')
 
 
-
+    
 for linha in caminho:
     print(linha)
+    print()
 
 
 
