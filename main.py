@@ -12,7 +12,7 @@ def reduzir_matriz(matriz):
     
     # Reduz as linhas
     for i in range(len(matriz)):
-        min_linha = min(matriz[i])
+        min_linha = min(matriz[i]) 
         if min_linha < float('inf'):
             custo_reducao += min_linha
             for j in range(len(matriz)):
