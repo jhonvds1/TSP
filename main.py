@@ -1,7 +1,7 @@
 import numpy as np
 
 def abrir_caminho():
-    with open('tsp4_7013.txt', 'r', encoding='utf-8') as caminho:
+    with open('tsp3_1194.txt', 'r', encoding='utf-8') as caminho:
         linhas = caminho.readlines()
     caminhos = [list(map(int, linha.split())) for linha in linhas]
     return caminhos
@@ -59,8 +59,11 @@ def tsp_branch_and_bound(matriz):
                 bnb_recursivo(prox_cidade, visitados, custo_parcial, caminho + [prox_cidade])
                 visitados[prox_cidade] = False  # Backtracking
 
+    # Cria uma cópia da matriz para preservá-la
+    matriz_copy = np.array(matriz, dtype=float).tolist()
+
     # Inicializa a matriz reduzida
-    matriz_reduzida, custo_inicial = reduzir_matriz(np.array(matriz, dtype=float).tolist())
+    matriz_reduzida, custo_inicial = reduzir_matriz(matriz_copy)
     
     # Começa o Branch and Bound a partir de cada cidade
     for inicio in range(n):
