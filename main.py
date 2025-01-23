@@ -1,56 +1,83 @@
 import numpy as np
-import heapq
+import time
 
-# Função para abrir o arquivo e ler os dados
 def abrir_caminho():
-    with open('tsp5_27603.txt', 'r', encoding='utf-8') as caminho:
+    with open('tsp4_7013.txt', 'r', encoding='utf-8') as caminho:
         linhas = caminho.readlines()
     caminhos = [list(map(int, linha.split())) for linha in linhas]
     return caminhos
 
-# Função para calcular a distância euclidiana entre dois pontos
-def distancia(p1, p2):
-    return np.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
+def reduzir_matriz(matriz):
+    # Reduz a matriz de custos e retorna a matriz reduzida e o custo da redução.
+    custo_reducao = 0
+    
+    # Reduz as linhas
+    for i in range(len(matriz)):
+        min_linha = min(matriz[i]) 
+        if min_linha < float('inf'):
+            custo_reducao += min_linha
+            for j in range(len(matriz)):
+                matriz[i][j] -= min_linha
+    
+    # Reduz as colunas
+    for j in range(len(matriz)):
+        min_coluna = min(matriz[i][j] for i in range(len(matriz)))
+        if min_coluna < float('inf'):
+            custo_reducao += min_coluna
+            for i in range(len(matriz)):
+                matriz[i][j] -= min_coluna
+    
+    return matriz, custo_reducao
 
-# Função para implementar o Algoritmo do Vizinho Mais Próximo
-def tsp_vizinho_mais_proximo(caminhos):
-    # Extraindo os pontos (coordenadas) do arquivo
-    pontos = [(linha[1], linha[2]) for linha in caminhos]
-    
-    # Inicializando a solução
-    caminho = [0]  # Começa do ponto 0
-    visitados = set(caminho)
-    
-    custo_total = 0
-    atual = 0  # Ponto atual
-    
-    # Percorrendo os pontos para formar o caminho
-    while len(caminho) < len(pontos):
-        proximos_pontos = []
-        for i in range(len(pontos)):
-            if i not in visitados:
-                dist = distancia(pontos[atual], pontos[i])
-                proximos_pontos.append((dist, i))
-        
-        # Encontrando o ponto mais próximo
-        proximo = min(proximos_pontos)[1]
-        caminho.append(proximo)
-        custo_total += min(proximos_pontos)[0]
-        visitados.add(proximo)
-        atual = proximo
-    
-    # Fechar o ciclo (voltar ao ponto inicial)
-    custo_total += distancia(pontos[atual], pontos[caminho[0]])
-    caminho.append(caminho[0])
-    
-    return caminho, custo_total
+def tsp_branch_and_bound(matriz):
+    n = len(matriz)
+    melhor_caminho = None
+    melhor_custo = float('inf')
 
-# Função principal
-def main():
-    caminhos = abrir_caminho()
-    caminho, custo_total = tsp_vizinho_mais_proximo(caminhos)
-    print("Caminho aproximado:", caminho)
-    print("Custo total:", custo_total)
+    def bnb_recursivo(cidade_atual, visitados, custo_atual, caminho):
+        nonlocal melhor_caminho, melhor_custo
 
-if __name__ == "__main__":
-    main()
+        # Se todas as cidades foram visitadas, retorna à inicial
+        if len(caminho) == n:
+            custo_total = custo_atual + matriz[cidade_atual][caminho[0]]
+            if custo_total < melhor_custo:
+                melhor_custo = custo_total
+                melhor_caminho = caminho + [caminho[0]]
+            return
+
+        # Tenta todas as cidades não visitadas
+        for prox_cidade in range(n):
+            if not visitados[prox_cidade] and matriz[cidade_atual][prox_cidade] < float('inf'):
+                # Atualiza o custo parcial
+                custo_parcial = custo_atual + matriz[cidade_atual][prox_cidade]
+
+                # Poda: Se o custo parcial já for maior que o melhor custo, ignora
+                if custo_parcial >= melhor_custo:
+                    continue
+
+                # Marca como visitada e avança para a próxima cidade
+                visitados[prox_cidade] = True
+                bnb_recursivo(prox_cidade, visitados, custo_parcial, caminho + [prox_cidade])
+                visitados[prox_cidade] = False  # Backtracking
+
+    # Cria uma cópia da matriz para preservá-la
+    matriz_copy = np.array(matriz, dtype=float).tolist()
+
+    # Inicializa a matriz reduzida
+    matriz_reduzida, custo_inicial = reduzir_matriz(matriz_copy)
+    
+    # Começa o Branch and Bound a partir de cada cidade
+    for inicio in range(n):
+        visitados = [False] * n
+        visitados[inicio] = True
+        bnb_recursivo(inicio, visitados, custo_inicial, [inicio])
+
+    return melhor_caminho, melhor_custo
+
+
+# Executando o TSP com Branch and Bound
+inicio = time.time()
+caminhos = abrir_caminho()
+melhor_caminho, melhor_custo = tsp_branch_and_bound(caminhos)
+fim = time.time()
+print(f"O melhor caminho é: {melhor_caminho} com custo: {melhor_custo} e tempo: {(fim - inicio):.2f}")
