@@ -71,7 +71,7 @@ def refinamento_2opt(caminhos, caminho):
                     melhorou = True
     return caminho
 
-def inicializacao_bb():
+def inicializacao():
     """
     Encontra o melhor caminho e custo para o problema TSP com refinamento.
     """
@@ -93,7 +93,7 @@ def inicializacao_bb():
     return melhor_caminho, melhor_custo
 
 # Execução principal
-melhor_caminho, melhor_custo = inicializacao_bb()
+melhor_caminho, melhor_custo = inicializacao()
 if melhor_caminho:
     print(f"O melhor caminho e: {melhor_caminho} e o custo e: {melhor_custo}")
 else:
