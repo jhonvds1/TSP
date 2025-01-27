@@ -88,102 +88,103 @@ print(f"O melhor caminho é: {melhor_caminho} com custo: {melhor_custo}")
 
 
 
-import numpy as np
+import math
 
-# Função para abrir o arquivo e ler os dados
-def abrir_caminho():
-    with open('tsp5_27603.txt', 'r', encoding='utf-8') as caminho:
-        linhas = caminho.readlines()
-    caminhos = [list(map(int, linha.split())) for linha in linhas]
-    return caminhos
+def abrir_caminho(arquivo='tsp5_27603.txt'):
+    """
+    Lê um arquivo de texto contendo as distâncias do TSP e retorna uma matriz.
+    """
+    try:
+        with open(arquivo, 'r', encoding='utf-8') as caminho:
+            linhas = caminho.readlines()
+        return [list(map(int, linha.split())) for linha in linhas]
+    except FileNotFoundError:
+        print(f"Erro: Arquivo '{arquivo}' não encontrado.")
+        return []
+    except ValueError:
+        print("Erro: O arquivo contém dados inválidos.")
+        return []
 
-# Função para calcular a distância euclidiana entre dois pontos
-def distancia(p1, p2):
-    return np.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
+def encontrar_menor_caminho(caminhos, inicio):
+    """
+    Encontra o menor caminho partindo de um vértice inicial usando abordagem gulosa.
+    """
+    visitado = [False] * len(caminhos)
+    visitado[inicio] = True
+    caminho = [inicio]
+    custo_total = 0
+    atual = inicio
 
-# Função para gerar a matriz de distâncias
-def gerar_matriz_distancias(pontos):
-    n = len(pontos)
-    matriz_distancias = np.zeros((n, n))
-    for i in range(n):
-        for j in range(i + 1, n):
-            d = distancia(pontos[i], pontos[j])
-            matriz_distancias[i][j] = d
-            matriz_distancias[j][i] = d
-    return matriz_distancias
+    for _ in range(len(caminhos) - 1):
+        prox_vertice = -1
+        dist_min = float('inf')
 
-# Função para calcular o custo de um caminho
-def calcular_custo(caminho, matriz_distancias):
+        for j, distancia in enumerate(caminhos[atual]):
+            if not visitado[j] and distancia < dist_min:
+                dist_min = distancia
+                prox_vertice = j
+
+        visitado[prox_vertice] = True
+        caminho.append(prox_vertice)
+        custo_total += dist_min
+        atual = prox_vertice
+
+    # Volta ao ponto inicial
+    custo_total += caminhos[atual][inicio]
+    caminho.append(inicio)
+
+    return caminho, custo_total
+
+def calcular_custo(caminhos, caminho):
+    """
+    Calcula o custo total de um caminho.
+    """
     custo = 0
     for i in range(len(caminho) - 1):
-        custo += matriz_distancias[caminho[i]][caminho[i + 1]]
-    custo += matriz_distancias[caminho[-1]][caminho[0]]  # Fechar o ciclo
+        custo += caminhos[caminho[i]][caminho[i + 1]]
     return custo
 
-# Função para implementar o Algoritmo do Vizinho Mais Próximo
-def tsp_vizinho_mais_proximo(caminhos):
-    pontos = [(linha[1], linha[2]) for linha in caminhos]
-    matriz_distancias = gerar_matriz_distancias(pontos)
-    
+def refinamento_2opt(caminhos, caminho):
+    """
+    Refina o caminho usando a técnica 2-opt.
+    """
+    melhorou = True
+    while melhorou:
+        melhorou = False
+        for i in range(1, len(caminho) - 2):
+            for j in range(i + 1, len(caminho) - 1):
+                if j - i == 1:  # Evita troca adjacente
+                    continue
+                novo_caminho = caminho[:i] + caminho[i:j][::-1] + caminho[j:]
+                if calcular_custo(caminhos, novo_caminho) < calcular_custo(caminhos, caminho):
+                    caminho = novo_caminho
+                    melhorou = True
+    return caminho
+
+def inicializacao_bb():
+    """
+    Encontra o melhor caminho e custo para o problema TSP com refinamento.
+    """
+    caminhos = abrir_caminho()
+    if not caminhos:  # Verifica se os caminhos foram carregados corretamente
+        return None, float('inf')
+
     melhor_caminho = None
-    menor_custo = float('inf')
-    
-    # Tentar diferentes pontos de partida
-    for ponto_inicial in range(len(pontos)):
-        caminho = [ponto_inicial]
-        visitados = set(caminho)
-        custo_total = 0
-        atual = ponto_inicial
-        
-        while len(caminho) < len(pontos):
-            proximos_pontos = []
-            for i in range(len(pontos)):
-                if i not in visitados:
-                    dist = matriz_distancias[atual][i]
-                    proximos_pontos.append((dist, i))
-            
-            proximo = min(proximos_pontos)[1]
-            caminho.append(proximo)
-            custo_total += min(proximos_pontos)[0]
-            visitados.add(proximo)
-            atual = proximo
-        
-        # Fechar o ciclo
-        custo_total += matriz_distancias[atual][caminho[0]]
-        
-        if custo_total < menor_custo:
+    melhor_custo = float('inf')
+
+    for inicio in range(len(caminhos)):
+        caminho, custo = encontrar_menor_caminho(caminhos, inicio)
+        caminho = refinamento_2opt(caminhos, caminho)  # Aplica refinamento
+        custo = calcular_custo(caminhos, caminho)
+        if custo < melhor_custo:
+            melhor_custo = custo
             melhor_caminho = caminho
-            menor_custo = custo_total
-
-    # Aplicar 2-opt para otimizar o caminho
-    melhor_caminho, menor_custo = two_opt(melhor_caminho, pontos, matriz_distancias)
-    
-    return melhor_caminho, menor_custo
-
-# Função 2-opt para melhorar a solução
-def two_opt(caminho, pontos, matriz_distancias):
-    melhor_caminho = caminho
-    melhor_custo = calcular_custo(melhor_caminho, matriz_distancias)
-    
-    for i in range(1, len(caminho) - 2):
-        for j in range(i + 1, len(caminho)):
-            if j - i == 1: continue  # Ignora vizinhos imediatos
-            novo_caminho = melhor_caminho[:]
-            novo_caminho[i:j] = reversed(melhor_caminho[i:j])
-            novo_custo = calcular_custo(novo_caminho, matriz_distancias)
-            
-            if novo_custo < melhor_custo:
-                melhor_caminho = novo_caminho
-                melhor_custo = novo_custo
 
     return melhor_caminho, melhor_custo
 
-# Função principal
-def main():
-    caminhos = abrir_caminho()
-    melhor_caminho, custo_total = tsp_vizinho_mais_proximo(caminhos)
-    print("Caminho aproximado:", melhor_caminho)
-    print("Custo total:", custo_total)
-
-if __name__ == "__main__":
-    main()
+# Execução principal
+melhor_caminho, melhor_custo = inicializacao_bb()
+if melhor_caminho:
+    print(f"O melhor caminho é: {melhor_caminho} e o custo é: {melhor_custo}")
+else:
+    print("Não foi possível calcular o melhor caminho.")
