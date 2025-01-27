@@ -97,4 +97,4 @@ melhor_caminho, melhor_custo = inicializacao_bb()
 if melhor_caminho:
     print(f"O melhor caminho e: {melhor_caminho} e o custo e: {melhor_custo}")
 else:
-    print("Nao foi possível calcular o melhor caminho.")
+    print("Nao foi possivel calcular o melhor caminho.")
