@@ -1,5 +1,3 @@
-
-
 import math
 
 def abrir_caminho(arquivo='tsp5_27603.txt'):
