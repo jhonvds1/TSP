@@ -77,7 +77,7 @@ def tsp_branch_and_bound(matriz):
 # Executando o TSP com Branch and Bound
 caminhos = abrir_caminho()
 melhor_caminho, melhor_custo = tsp_branch_and_bound(caminhos)
-print(f"O melhor caminho é: {melhor_caminho} com custo: {melhor_custo}")
+print(f"O melhor caminho e: {melhor_caminho} com custo: {melhor_custo}")
 
 
 
@@ -185,6 +185,6 @@ def inicializacao_bb():
 # Execução principal
 melhor_caminho, melhor_custo = inicializacao_bb()
 if melhor_caminho:
-    print(f"O melhor caminho é: {melhor_caminho} e o custo é: {melhor_custo}")
+    print(f"O melhor caminho e: {melhor_caminho} e o custo e: {melhor_custo}")
 else:
-    print("Não foi possível calcular o melhor caminho.")
+    print("Nao foi possível calcular o melhor caminho.")
